@@ -1,0 +1,14 @@
+python-dotenv
+requests
+openpyxl
+pyarrow
+numpy
+pandas
+hdfs
+apache-airflow
+pyspark
+matplotlib
+seaborn
+pymysql
+sqlalchemy
+duckdb
