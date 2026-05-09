@@ -1,14 +1,11 @@
 python-dotenv
-requests
 openpyxl
-pyarrow
 numpy
 pandas
-hdfs
-apache-airflow
-pyspark
 matplotlib
 seaborn
+pyarrow
 pymysql
 sqlalchemy
 duckdb
+pyspark
