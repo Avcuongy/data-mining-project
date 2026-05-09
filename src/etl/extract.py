@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import traceback
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -112,8 +113,6 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
     except Exception as e:
         print(f"\nError while exporting tables to Parquet: {e}")
-        import traceback
-
         traceback.print_exc()
         sys.exit(1)
 
