@@ -86,7 +86,7 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
                 )
                 continue
 
-            # Staging transformations (per table)
+            # Staging (per table)
             df = staging(df, table, engine)
 
             # Save as Parquet (per table)

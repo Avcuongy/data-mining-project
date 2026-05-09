@@ -68,11 +68,11 @@ def _load_table_metadata(engine, table_name: str) -> dict[str, object]:
     """Load metadata from database
 
     Args:
-        engine: SQLAlchemy engine to connect to the database
-        table_name (str): Name of the table to load metadata
+        engine: SQLAlchemy engine to connect to the database.
+        table_name (str): Name of the table to load metadata.
 
     Returns:
-        dict[str, object]
+        dict[str, object]:
     """
     columns = inspect(engine).get_columns(table_name)
     normalized_columns = []
@@ -102,8 +102,8 @@ def staging(
     """Perform staging transformations on the given DataFrame based on the table metadata.
 
     Args:
-        df (pd.DataFrame): Input DataFrame to be staged
-        table_name (str | None, optional): Name of the table to load metadata for. Defaults to None.
+        df (pd.DataFrame): Input DataFrame to be staged.
+        table_name (str | None, optional): Name of the table to load metadata. Defaults to None.
         engine: SQLAlchemy engine to connect to the database. Defaults to None.
 
     Returns:
@@ -176,7 +176,7 @@ def staging(
             frame[column] = frame[column].replace("", pd.NA)
 
     if required_columns:
-        frame = frame.dropna(subset=required_columns)
+        frame = frame.dropna()  # Option
 
     frame = frame.drop_duplicates().reset_index(drop=True)
 
