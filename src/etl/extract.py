@@ -7,6 +7,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 from utils.staging import staging
 from utils.config_env import DATABASE_URL
+import warnings
+
+warnings.filterwarnings("ignore")
 
 DATABASE_URL = DATABASE_URL
 
@@ -48,10 +51,7 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
     os.makedirs(output_dir, exist_ok=True)
 
-    print("=" * 60)
-    print("Exporting data to Parquet format")
-    print("Output directory:", output_dir)
-    print("=" * 60)
+    print("[Extract] Extracting...")
     print()
 
     # Use current date for timestamping files
@@ -102,17 +102,15 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
             exported_files[table] = output_file
 
-        print("\n" + "=" * 60)
-        print("Extraction Completed")
-        print("=" * 60)
+        print("[Extract] Completed")
 
         if not exported_files:
-            print("No tables were exported")
+            print("[Extract] No tables were exported")
 
         return exported_files
 
     except Exception as e:
-        print(f"\nError while exporting tables to Parquet: {e}")
+        print(f"\n[Extract] Error while exporting tables to Parquet: {e}")
         traceback.print_exc()
         sys.exit(1)
 
