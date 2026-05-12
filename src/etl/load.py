@@ -9,7 +9,6 @@ warnings.filterwarnings("ignore")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 COMPLETED_DIR = PROJECT_ROOT / "data" / "etl" / "completed"
 DUCK_DB_PATH = PROJECT_ROOT / "data_warehouse.duckdb"
-# Load dimension tables first, then fact table (to respect foreign key constraints)
 SOURCE = [
     "dim_date",
     "dim_customer",

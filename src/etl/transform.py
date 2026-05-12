@@ -387,11 +387,11 @@ def transform(
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     outputs = {
+        "dim_date": dim_date,
         "dim_customer": dim_customer,
         "dim_seller": dim_seller,
         "dim_product": dim_product,
         "dim_order_info": dim_order_info,
-        "dim_date": dim_date,
         "fact_sales": fact_sales,
     }
 
