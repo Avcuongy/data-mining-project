@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 STAGING_DIR = PROJECT_ROOT / "data" / "etl" / "staging"
 COMPLETED_DIR = PROJECT_ROOT / "data" / "etl" / "completed"
-SOURCE_TABLES = {
+SOURCE = {
     "olist_order_customers",
     "olist_order_items",
     "olist_order_payments",
@@ -21,43 +21,7 @@ SOURCE_TABLES = {
 }
 
 
-def get_latest_file_in_directory(directory, extension):
-    """
-    Get the latest file in a directory with a specific extension.
-
-    Args:
-        directory (str): Directory to search for files.
-        extension (str): File extension to look for.
-
-    Returns:
-        str or None: Path to the latest file or None if no files are found.
-    """
-    files = [
-        os.path.join(directory, f)
-        for f in os.listdir(directory)
-        if f.endswith(extension)
-    ]
-    if not files:
-        return None
-    latest_file = max(files, key=os.path.getmtime)
-    return latest_file
-
-
-def _read_parquet(path: Path) -> pd.DataFrame:
-    return pd.read_parquet(path)
-
-
-def _safe_to_datetime(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors="coerce", utc=True)
-
-
-def _assign_surrogate_key(frame: pd.DataFrame, key_column: str) -> pd.DataFrame:
-    frame = frame.drop_duplicates().reset_index(drop=True).copy()
-    frame.insert(0, key_column, range(1, len(frame) + 1))
-    return frame
-
-
-def _pick_latest_staging_files(directory: Path) -> dict[str, Path]:
+def _get_latest_file_in_directory(directory: Path) -> dict[str, Path]:
     latest_files: dict[str, tuple[float, Path]] = {}
 
     if not directory.exists():
@@ -65,7 +29,7 @@ def _pick_latest_staging_files(directory: Path) -> dict[str, Path]:
 
     for path in directory.glob("*.parquet"):
         table_name = next(
-            (name for name in SOURCE_TABLES if path.name.startswith(f"{name}_")),
+            (name for name in SOURCE if path.name.startswith(f"{name}_")),
             None,
         )
         if table_name is None:
@@ -78,6 +42,16 @@ def _pick_latest_staging_files(directory: Path) -> dict[str, Path]:
             latest_files[table_name] = (modified_time, path)
 
     return {table_name: path for table_name, (_, path) in latest_files.items()}
+
+
+def _safe_to_datetime(series: pd.Series) -> pd.Series:
+    return pd.to_datetime(series, errors="coerce", utc=True)
+
+
+def _assign_surrogate_key(frame: pd.DataFrame, key_column: str) -> pd.DataFrame:
+    frame = frame.drop_duplicates().reset_index(drop=True).copy()
+    frame.insert(0, key_column, range(1, len(frame) + 1))
+    return frame
 
 
 def _build_dim_customer(customers: pd.DataFrame) -> pd.DataFrame:
@@ -103,6 +77,22 @@ def _build_dim_customer(customers: pd.DataFrame) -> pd.DataFrame:
             "customer_state",
             "is_current",
         ]
+    ]
+
+
+def _build_dim_seller(sellers: pd.DataFrame) -> pd.DataFrame:
+    frame = sellers[
+        [
+            "seller_id",
+            "seller_city",
+            "seller_state",
+        ]
+    ].copy()
+    frame = frame.drop_duplicates().sort_values(["seller_id"], kind="stable")
+    frame = _assign_surrogate_key(frame, "seller_key")
+    frame["is_current"] = True
+    return frame[
+        ["seller_key", "seller_id", "seller_city", "seller_state", "is_current"]
     ]
 
 
@@ -145,22 +135,6 @@ def _build_dim_product(products: pd.DataFrame) -> pd.DataFrame:
             "product_volume_cm3",
             "product_photos_qty",
         ]
-    ]
-
-
-def _build_dim_seller(sellers: pd.DataFrame) -> pd.DataFrame:
-    frame = sellers[
-        [
-            "seller_id",
-            "seller_city",
-            "seller_state",
-        ]
-    ].copy()
-    frame = frame.drop_duplicates().sort_values(["seller_id"], kind="stable")
-    frame = _assign_surrogate_key(frame, "seller_key")
-    frame["is_current"] = True
-    return frame[
-        ["seller_key", "seller_id", "seller_city", "seller_state", "is_current"]
     ]
 
 
@@ -368,11 +342,6 @@ def _build_fact_sales(
     )
 
 
-def _write_parquet(frame: pd.DataFrame, output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_parquet(output_path, engine="pyarrow", compression="snappy", index=False)
-
-
 def transform(
     input_dir: str | Path = STAGING_DIR,
     output_dir: str | Path = COMPLETED_DIR,
@@ -383,21 +352,21 @@ def transform(
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
 
-    latest_files = _pick_latest_staging_files(input_dir)
-    missing_tables = sorted(SOURCE_TABLES - set(latest_files))
+    latest_files = _get_latest_file_in_directory(input_dir)
+    missing_tables = sorted(SOURCE - set(latest_files))
     if missing_tables:
         discovered_files = sorted(path.name for path in input_dir.glob("*.parquet"))
         raise ValueError(
-            f"Missing staging files for tables: {missing_tables}. "
-            f"Found parquet files in {input_dir}: {discovered_files}"
+            f"[Transform] Warning: Missing staging files for tables: {missing_tables}. "
+            f"[Transform] Warning: Found parquet files in {input_dir}: {discovered_files}"
         )
 
-    customers = _read_parquet(latest_files["olist_order_customers"])
-    items = _read_parquet(latest_files["olist_order_items"])
-    payments = _read_parquet(latest_files["olist_order_payments"])
-    orders = _read_parquet(latest_files["olist_orders"])
-    products = _read_parquet(latest_files["olist_products"])
-    sellers = _read_parquet(latest_files["olist_sellers"])
+    customers = pd.read_parquet(latest_files["olist_order_customers"])
+    items = pd.read_parquet(latest_files["olist_order_items"])
+    payments = pd.read_parquet(latest_files["olist_order_payments"])
+    orders = pd.read_parquet(latest_files["olist_orders"])
+    products = pd.read_parquet(latest_files["olist_products"])
+    sellers = pd.read_parquet(latest_files["olist_sellers"])
 
     dim_customer = _build_dim_customer(customers)
     dim_product = _build_dim_product(products)
@@ -416,19 +385,23 @@ def transform(
     )
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
     outputs = {
-        "fact_sales": fact_sales,
         "dim_customer": dim_customer,
-        "dim_product": dim_product,
         "dim_seller": dim_seller,
+        "dim_product": dim_product,
         "dim_order_info": dim_order_info,
         "dim_date": dim_date,
+        "fact_sales": fact_sales,
     }
 
     written_files: dict[str, str] = {}
     for table_name, frame in outputs.items():
         output_path = output_dir / f"{table_name}_{timestamp}.parquet"
-        _write_parquet(frame, output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        frame.to_parquet(
+            output_path, engine="pyarrow", compression="snappy", index=False
+        )
         written_files[table_name] = str(output_path)
         print(f"[Transform] Saved {table_name}: {output_path}")
 

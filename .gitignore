@@ -226,3 +226,7 @@ test/
 # data
 *.csv
 *.parquet
+
+# database
+*.db
+*.duckdb

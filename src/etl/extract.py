@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 DATABASE_URL = DATABASE_URL
 
 
-def get_db_connection():
+def _get_db_connection():
     """
     Create database connection.
     """
@@ -22,26 +22,12 @@ def get_db_connection():
 
     engine = create_engine(connection_string, echo=False)
     if engine:
-        print("Success to connect database.")
+        print("[Extract] Success to connect database.")
     else:
-        print("Failed to connect database.")
+        print("[Extract] Failed to connect database.")
         sys.exit(1)
 
     return engine
-
-
-def to_parquet(df: pd.DataFrame, output_path: str):
-    """
-    Save one dataframe to Parquet format.
-    """
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    df.to_parquet(
-        output_path,
-        engine="pyarrow",
-        compression="snappy",
-        index=False,
-    )
 
 
 def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
@@ -52,10 +38,8 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
     os.makedirs(output_dir, exist_ok=True)
 
     print("[Extract] Extracting...")
-    print()
 
-    # Use current date for timestamping files
-    timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if tables is None:
         tables = [
@@ -69,12 +53,12 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
     try:
         # Get database connection
-        engine = get_db_connection()
+        engine = _get_db_connection()
 
         exported_files = {}
 
         for table in tables:
-            print("\n" + "-" * 60)
+            print("-" * 60)
             print(f"Table: {table}")
 
             query = f"SELECT * FROM {table}"
@@ -82,7 +66,7 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
             if df.empty:
                 print(
-                    f"Warning: Table '{table}' returned no data. Skipping Parquet file."
+                    f"[Extract] Warning: Table '{table}' returned no data. Skipping Parquet file."
                 )
                 continue
 
@@ -91,17 +75,22 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
             # Save as Parquet (per table)
             output_file = os.path.join(output_dir, f"{table}_{timestamp}.parquet")
-            to_parquet(df, output_file)
-
-            print(f"Rows exported   : {len(df):,}")
-            print(
-                f"File size (MB)  : {os.path.getsize(output_file) / (1024 * 1024):.2f}"
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            df.to_parquet(
+                output_file,
+                engine="pyarrow",
+                compression="snappy",
+                index=False,
             )
 
-            print("-" * 60)
+            print(f"[Extract] Rows exported   : {len(df):,}")
+            print(
+                f"[Extract] File size (MB)  : {os.path.getsize(output_file) / (1024 * 1024):.2f}"
+            )
 
             exported_files[table] = output_file
 
+        print("-" * 60)
         print("[Extract] Completed")
 
         if not exported_files:
@@ -110,7 +99,7 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
         return exported_files
 
     except Exception as e:
-        print(f"\n[Extract] Error while exporting tables to Parquet: {e}")
+        print(f"[Extract] Error while exporting tables to Parquet: {e}")
         traceback.print_exc()
         sys.exit(1)
 
