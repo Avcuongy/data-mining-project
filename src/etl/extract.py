@@ -59,7 +59,7 @@ def extract(tables: list = None, output_dir: str = "data/etl/staging") -> dict:
 
         for table in tables:
             print("-" * 60)
-            print(f"Table: {table}")
+            print(f"[Extract] Table: {table}")
 
             query = f"SELECT * FROM {table}"
             df = pd.read_sql(query, engine)

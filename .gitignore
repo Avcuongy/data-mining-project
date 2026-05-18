@@ -226,6 +226,7 @@ test/
 # data
 *.csv
 *.parquet
+*.json
 
 # database
 *.db

@@ -1,10 +1,13 @@
 # Declaration of phony targets
-.PHONY: help etl extract transform load
+.PHONY: help etl extract transform load config hcubing
 
 # Python interpreter (venv)
 PYTHON ?= .venv/scripts/python.exe
 
 # Rules
+config:
+	$(PYTHON) scripts/config.py
+
 etl: extract transform load
 	$(PYTHON) scripts/etl.py
 

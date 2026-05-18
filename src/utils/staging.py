@@ -181,6 +181,6 @@ def staging(
     frame = frame.drop_duplicates().reset_index(drop=True)
 
     removed_rows = original_rows - len(frame)
-    print(f"Staging complete: {len(frame):,} rows kept, {removed_rows:,} rows removed")
+    print(f"[Staging] {len(frame):,} rows kept, {removed_rows:,} rows removed")
 
     return frame
