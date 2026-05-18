@@ -29,12 +29,16 @@ def _create_data_warehouse() -> None:
 
 
 def main() -> None:
+    # Ensure logs/ first
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
     logging.basicConfig(
         level=logging.INFO,
         format="[%(levelname)s] %(message)s",
         filemode="a",
         filename=LOGS_DIR / "config.log",
     )
+
     logging.info("Configuration: Starting")
     _ensure_directories()
     _create_data_warehouse()
