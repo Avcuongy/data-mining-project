@@ -3,6 +3,9 @@ import re
 import pandas as pd
 from sqlalchemy import inspect
 from sqlalchemy.sql import sqltypes
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 def _normalize_columns(frame: pd.DataFrame) -> pd.DataFrame:

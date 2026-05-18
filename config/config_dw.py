@@ -18,5 +18,3 @@ with open(sql_file_path, "r", encoding="utf-8") as file:
 conn.execute(sql_script)
 
 conn.close()
-
-print(f"Database has been created and saved to {database_path}")

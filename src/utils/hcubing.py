@@ -3,6 +3,9 @@ from typing import Optional
 
 import duckdb
 import pandas as pd
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 def _get_duckdb_connection(

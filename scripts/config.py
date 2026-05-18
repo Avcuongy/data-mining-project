@@ -2,6 +2,10 @@ from pathlib import Path
 import runpy
 import logging
 
+import warnings
+
+warnings.filterwarnings("ignore")
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_ETL_STAGING = PROJECT_ROOT / "data" / "etl" / "staging"
 DATA_ETL_COMPLETED = PROJECT_ROOT / "data" / "etl" / "completed"

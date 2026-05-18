@@ -1,5 +1,12 @@
-# Declaration of phony targets
+# Phony targets
 .PHONY: help etl extract transform load config hcubing
+
+# Variables
+DUCKDB_PATH ?= data_warehouse.duckdb
+MIN_SUP_SALES ?= 0.01
+K_SALES ?= 10
+MIN_SUP_LOGISTICS ?= 0.01
+K_LOGISTICS ?= 10
 
 # Python interpreter (venv)
 PYTHON ?= .venv/scripts/python.exe
@@ -8,7 +15,7 @@ PYTHON ?= .venv/scripts/python.exe
 config:
 	$(PYTHON) scripts/config.py
 
-etl: extract transform load
+etl:
 	$(PYTHON) scripts/etl.py
 
 extract:

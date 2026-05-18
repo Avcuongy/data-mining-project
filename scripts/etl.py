@@ -1,15 +1,24 @@
 from pathlib import Path
-import sys
 import argparse
 import logging
+import runpy
+import sys
 
-from src.etl.extract import extract as extract_data
-from src.etl.transform import transform as transform_data
-from src.etl.load import load as load_data
+import warnings
+
+warnings.filterwarnings("ignore")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STAGING_DIR = PROJECT_ROOT / "data" / "etl" / "staging"
 COMPLETED_DIR = PROJECT_ROOT / "data" / "etl" / "completed"
+SRC_DIR = PROJECT_ROOT / "src"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+
+def _run_script(script_path: Path) -> None:
+    runpy.run_path(str(script_path), run_name="__main__")
 
 
 def run_pipeline(
@@ -20,11 +29,7 @@ def run_pipeline(
     try:
         if not skip_extract:
             logging.info("Step 1/3: Extracting data to %s", STAGING_DIR)
-            exported = extract_data(output_dir=str(STAGING_DIR))
-            logging.info(
-                "Extract exported tables: %s",
-                list(exported.keys()) if exported else "none",
-            )
+            _run_script(PROJECT_ROOT / "src" / "etl" / "extract.py")
         else:
             logging.info("Skipping extract step")
 
@@ -32,19 +37,13 @@ def run_pipeline(
             logging.info(
                 "Step 2/3: Transforming data from %s to %s", STAGING_DIR, COMPLETED_DIR
             )
-            transformed = transform_data(
-                input_dir=STAGING_DIR, output_dir=COMPLETED_DIR
-            )
-            logging.info(
-                "Transform produced tables: %s",
-                list(transformed.keys()) if transformed else "none",
-            )
+            _run_script(PROJECT_ROOT / "src" / "etl" / "transform.py")
         else:
             logging.info("Skipping transform step")
 
         if not skip_load:
             logging.info("Step 3/3: Loading data from %s into DuckDB", COMPLETED_DIR)
-            load_data()
+            _run_script(PROJECT_ROOT / "src" / "etl" / "load.py")
         else:
             logging.info("Skipping load step")
 
