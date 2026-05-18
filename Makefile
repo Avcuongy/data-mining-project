@@ -20,11 +20,16 @@ transform:
 load:
 	$(PYTHON) src/etl/load.py
 
+hcubing:
+	$(PYTHON) src/utils/hcubing.py --db $(DUCKDB_PATH) --min_sup_sales $(MIN_SUP_SALES) --k_sales $(K_SALES) --min_sup_logistics $(MIN_SUP_LOGISTICS) --k_logistics $(K_LOGISTICS)
+
 ## Display available targets
 help:
 	@echo "Targets:"
-	@echo "  help  - Display this help message"
-	@echo "  etl   - Run the ETL process"
-	@echo "  extract - Run the extract step"
-	@echo "  transform - Run the transform step"
-	@echo "  load - Run the load step"
+	@echo "  help       - Display this help message"
+	@echo "  config     - Set up configuration"
+	@echo "  etl        - Run the ETL process"
+	@echo "  extract    - Run the extract step"
+	@echo "  transform  - Run the transform step"
+	@echo "  load       - Run the load step"
+	@echo "  hcubing    - Run iceberg cubing"
