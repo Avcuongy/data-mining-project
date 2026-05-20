@@ -12,7 +12,7 @@ def _get_duckdb_connection(
     db_path: str = "data_warehouse.duckdb",
 ) -> duckdb.DuckDBPyConnection:
     conn = duckdb.connect(database=db_path, read_only=False)
-    conn.execute("SET schema='DataWarehouse'")
+    conn.execute("SET search_path = 'data_warehouse.DataWarehouse,main'")
     return conn
 
 

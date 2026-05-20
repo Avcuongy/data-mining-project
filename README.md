@@ -34,3 +34,8 @@ If you prefer to use `make`, you can run:
 make config
 make etl
 ```
+
+# Duckdb
+
+Setup ODBC: [Link](https://duckdb.org/docs/current/clients/odbc/windows)
+Set path connection string: `Database=..\data-mining-project\data_warehouse.duckdb` - Replace `..` by the full path of your local path.
