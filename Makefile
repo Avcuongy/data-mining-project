@@ -3,10 +3,10 @@
 
 # Variables
 DUCKDB_PATH ?= data_warehouse.duckdb
-MIN_SUP_SALES ?= 0.01
-K_SALES ?= 10
-MIN_SUP_LOGISTICS ?= 0.01
-K_LOGISTICS ?= 10
+MIN_SUP_SALES ?= 0.2
+K_SALES ?= 500
+MIN_SUP_LOGISTICS ?= 0.1
+K_LOGISTICS ?= 500
 
 # Python interpreter (venv)
 PYTHON ?= .venv/scripts/python.exe
