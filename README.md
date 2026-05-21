@@ -1,41 +1,32 @@
-# Setup
+# Project setup
 
-### Install GNU Make
+## Enviroment
 
-Linux (Debian/Ubuntu):
-
-```bash
-sudo apt update
-sudo apt install build-essential make
-```
-
-Windows:
-
-- Recommended: Use WSL (Windows Subsystem for Linux) and install Make inside the Linux distro.
-- Alternatively, install via Chocolatey or Scoop: `choco install make` or `scoop install make`
+- **Python Version:** Python >= 3.9
 
 ## Project setup
 
-Run:
+Run the following commands in your terminal:
 
 ```bash
+git clone https://github.com/Avcuongy/data-mining-project.git
+
+cd data-mining-project
+
 python -m venv .venv
+
 .venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
 
 pip install -e .
 
-python scripts/config.py
-python scripts/etl.py
-```
-
-If you prefer to use `make`, you can run:
-
-```bash
-make config
-make etl
+python scripts/config.py   # make config
+python scripts/etl.py      # make etl
 ```
 
 # Duckdb
 
-Setup ODBC: [Link](https://duckdb.org/docs/current/clients/odbc/windows)
-Set path connection string: `Database=..\data-mining-project\data_warehouse.duckdb` - Replace `..` by the full path of your local path.
+**Setup ODBC**: [ODBC API on Windows](https://duckdb.org/docs/current/clients/odbc/windows)
+
+**Configure connection string in PowerBI:** `Driver=DuckDB Driver;Database=YOUR_ABSOLUTE_PATH\data-mining-project\data_warehouse.duckdb access_mode=read_only;`. Replace `YOUR_ABSOLUTE_PATH` with actual full local directory path.
