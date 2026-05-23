@@ -24,9 +24,3 @@ pip install -e .
 python scripts/config.py   # make config
 python scripts/etl.py      # make etl
 ```
-
-# Duckdb
-
-**Setup ODBC**: [ODBC API on Windows](https://duckdb.org/docs/current/clients/odbc/windows)
-
-**Configure connection string in PowerBI:** `Driver=DuckDB Driver;Database=YOUR_ABSOLUTE_PATH\data-mining-project\data_warehouse.duckdb access_mode=read_only;`. Replace `YOUR_ABSOLUTE_PATH` with actual full local directory path.
