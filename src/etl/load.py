@@ -73,6 +73,16 @@ TABLE_COLUMNS = {
     ],
 }
 
+# Primary/key columns
+KEY_COLUMNS = {
+    "dim_customer": ["customer_key"],
+    "dim_seller": ["seller_key"],
+    "dim_product": ["product_key"],
+    "dim_order_info": ["order_info_key"],
+    "dim_date": ["date_key"],
+    "fact_sales": ["order_id", "order_id_item"],
+}
+
 
 def _get_latest_file_in_directory(directory: Path) -> dict[str, Path]:
     latest_files: dict[str, tuple[float, Path]] = {}
@@ -104,14 +114,38 @@ def _insert_data_to_table(
         df = pd.read_parquet(file_path)
         columns = TABLE_COLUMNS[table_name]
 
+        key_cols = KEY_COLUMNS.get(table_name, [])
+
+        if key_cols:
+            try:
+                existing = conn.execute(
+                    f"SELECT {', '.join(key_cols)} FROM data_warehouse.{table_name}"
+                ).df()
+            except Exception:
+                existing = pd.DataFrame(columns=key_cols)
+
+            if not existing.empty:
+                merged = df.merge(
+                    existing.drop_duplicates(), on=key_cols, how="left", indicator=True
+                )
+                new_df = merged[merged["_merge"] == "left_only"][columns]
+            else:
+                new_df = df[columns]
+        else:
+            new_df = df[columns]
+
+        if new_df.empty:
+            print(f"[Load] No new rows to insert into {table_name}")
+            return
+
         insert_sql = (
             f"INSERT INTO data_warehouse.{table_name} ({', '.join(columns)}) "
-            f"SELECT {', '.join(columns)} FROM df"
+            f"SELECT {', '.join(columns)} FROM new_df"
         )
 
         conn.execute(insert_sql)
 
-        row_count = len(df)
+        row_count = len(new_df)
         print(f"[Load] Successfully inserted {row_count} rows into {table_name}")
 
     except Exception as e:

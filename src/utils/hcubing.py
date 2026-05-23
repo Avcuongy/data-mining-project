@@ -12,7 +12,7 @@ def _get_duckdb_connection(
     db_path: str = "data_warehouse.duckdb",
 ) -> duckdb.DuckDBPyConnection:
     conn = duckdb.connect(database=db_path, read_only=False)
-    conn.execute("SET schema='DataWarehouse'")
+    conn.execute("SET search_path = 'data_warehouse.DataWarehouse,main'")
     return conn
 
 
@@ -25,6 +25,20 @@ def _parse_optional_int(value: str | None) -> Optional[int]:
     return int(text)
 
 
+def _validate_min_sup(min_sup: float) -> float:
+    value = float(min_sup)
+    if not 0.1 <= value <= 0.9:
+        raise ValueError("min_sup must be a float percentage between 0.1 and 0.9")
+    return value
+
+
+def _apply_min_sup_percentage(
+    df: pd.DataFrame, measure_column: str, min_sup: float
+) -> pd.DataFrame:
+    threshold = df[measure_column].max() * _validate_min_sup(min_sup)
+    return df[df[measure_column] >= threshold]
+
+
 def build_iceberg_sales_growth_cube(
     min_sup: float, k: Optional[int] = None, db_path: str = "data_warehouse.duckdb"
 ) -> pd.DataFrame:
@@ -34,7 +48,7 @@ def build_iceberg_sales_growth_cube(
     Measures: SUM(total_item_value) as `total_revenue`, COUNT(order_id_item) as `qty_items`
 
     Args:
-            min_sup: iceberg threshold applied to `total_revenue`.
+            min_sup: iceberg threshold as a float percentage in the range 0.1 to 0.9.
             k: optional top-k filter by average item value (if provided, select top-k by avg_item_value before applying min_sup).
             db_path: path to DuckDB file.
 
@@ -66,7 +80,7 @@ def build_iceberg_sales_growth_cube(
         df = df.sort_values("avg_item_value", ascending=False).head(k)
 
     if min_sup is not None:
-        df = df[df["total_revenue"] >= float(min_sup)]
+        df = _apply_min_sup_percentage(df, "total_revenue", min_sup)
 
     conn.register("tmp_sales_cube", df)
     conn.execute(
@@ -85,7 +99,7 @@ def build_iceberg_logistics_risk_cube(
     Measures: COUNT(late_order) as `late_orders`, SUM(freight_value) as `total_freight`
 
     Args:
-            min_sup: iceberg threshold applied to `late_orders`.
+            min_sup: iceberg threshold as a float percentage in the range 0.1 to 0.9.
             k: optional top-k filter by average freight per order (if provided, select top-k by avg_freight before applying min_sup).
             db_path: path to DuckDB file.
 
@@ -123,7 +137,7 @@ def build_iceberg_logistics_risk_cube(
         df = df.sort_values("avg_freight", ascending=False).head(k)
 
     if min_sup is not None:
-        df = df[df["late_orders"] >= int(min_sup)]
+        df = _apply_min_sup_percentage(df, "late_orders", min_sup)
 
     conn.register("tmp_logistics_cube", df)
     conn.execute(
@@ -136,9 +150,9 @@ def build_iceberg_logistics_risk_cube(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build iceberg cubes")
     parser.add_argument("--db", default="data_warehouse.duckdb")
-    parser.add_argument("--min_sup_sales", type=float, default=0.0)
+    parser.add_argument("--min_sup_sales", type=float, default=0.1)
     parser.add_argument("--k_sales", default=None)
-    parser.add_argument("--min_sup_logistics", type=float, default=0.0)
+    parser.add_argument("--min_sup_logistics", type=float, default=0.1)
     parser.add_argument("--k_logistics", default=None)
     args = parser.parse_args()
 

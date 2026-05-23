@@ -9,3 +9,4 @@ pymysql
 sqlalchemy
 duckdb
 pyspark
+streamlit

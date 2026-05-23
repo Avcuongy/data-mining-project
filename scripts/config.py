@@ -12,6 +12,7 @@ DATA_ETL_COMPLETED = PROJECT_ROOT / "data" / "etl" / "completed"
 DATA_RAW = PROJECT_ROOT / "data" / "raw"
 LOGS_DIR = PROJECT_ROOT / "logs"
 TEST_DIR = PROJECT_ROOT / "test"
+ENV_FILE = PROJECT_ROOT / ".env"
 
 
 def _ensure_directories() -> None:
@@ -29,12 +30,15 @@ def _create_data_warehouse() -> None:
 
 
 def main() -> None:
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
     logging.basicConfig(
         level=logging.INFO,
         format="[%(levelname)s] %(message)s",
         filemode="a",
         filename=LOGS_DIR / "config.log",
     )
+
     logging.info("Configuration: Starting")
     _ensure_directories()
     _create_data_warehouse()

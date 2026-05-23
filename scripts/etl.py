@@ -24,7 +24,7 @@ def _run_script(script_path: Path) -> None:
 def run_pipeline(
     skip_extract: bool = False, skip_transform: bool = False, skip_load: bool = False
 ) -> None:
-    logging.info("ETL pipeline")
+    logging.info("ETL pipeline start")
 
     try:
         if not skip_extract:
