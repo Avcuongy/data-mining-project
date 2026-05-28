@@ -10,3 +10,4 @@ sqlalchemy
 duckdb
 pyspark
 streamlit
+missingno
