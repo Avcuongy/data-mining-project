@@ -1,5 +1,5 @@
 # Phony targets
-.PHONY: help etl extract transform load config hcubing
+.PHONY: help etl extract transform load config hcubing all
 
 # Variables
 DUCKDB_PATH ?= data_warehouse.duckdb
@@ -30,6 +30,11 @@ load:
 hcubing:
 	$(PYTHON) src/utils/hcubing.py --db $(DUCKDB_PATH) --min_sup_sales $(MIN_SUP_SALES) --k_sales $(K_SALES) --min_sup_logistics $(MIN_SUP_LOGISTICS) --k_logistics $(K_LOGISTICS)
 
+all:
+	$(PYTHON) scripts/config.py
+	$(PYTHON) scripts/etl.py
+	$(PYTHON) src/utils/hcubing.py --db $(DUCKDB_PATH) --min_sup_sales $(MIN_SUP_SALES) --k_sales $(K_SALES) --min_sup_logistics $(MIN_SUP_LOGISTICS) --k_logistics $(K_LOGISTICS)
+
 ## Display available targets
 help:
 	@echo "Targets:"
@@ -40,3 +45,4 @@ help:
 	@echo "  transform  - Run the transform step"
 	@echo "  load       - Run the load step"
 	@echo "  hcubing    - Run iceberg cubing"
+	@echo "  all        - Run the entire process (config, etl, hcubing)"

@@ -2,7 +2,7 @@
 
 ## Enviroment
 
-- **Python Version:** Python >= 3.9
+**Python Version:** Python >= 3.9
 
 ## Project setup
 
@@ -21,6 +21,16 @@ pip install -r requirements.txt
 
 pip install -e .
 
-python scripts/config.py   # make config
-python scripts/etl.py      # make etl
+# Run all by `make all`
+python scripts/config.py
+python scripts/etl.py
+python src/utils/hcubing.py --db data_warehouse.duckdb --min_sup_sales 0.2 --k_sales 500 --min_sup_logistics 0.1 --k_logistics 500
 ```
+
+# ELT
+
+**Data source**:
+![ERD](/assets/erd.png)
+s
+**ETL**:
+![ETL](/assets/etl.png)
