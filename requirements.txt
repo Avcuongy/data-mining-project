@@ -10,4 +10,5 @@ sqlalchemy
 duckdb
 pyspark
 streamlit
+missingno
 scikit-learn
