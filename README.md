@@ -29,8 +29,10 @@ python src/utils/hcubing.py --db data_warehouse.duckdb --min_sup_sales 0.2 --k_s
 
 # ELT
 
-**Data source**:
+## Data source
+
 ![ERD](/assets/erd.png)
-s
-**ETL**:
+
+## ETL
+
 ![ETL](/assets/etl.png)
