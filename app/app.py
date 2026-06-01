@@ -18,6 +18,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = BASE_DIR / "models"
 DB_PATH = BASE_DIR / "data_warehouse.duckdb"
 
+import sys
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+try:
+    from src.utils.hcubing import build_iceberg_sales_growth_cube, build_iceberg_logistics_risk_cube
+except ImportError:
+    st.error("Không nạp được thư viện xây dựng Iceberg Cube")
+
+
 @st.cache_resource
 def load_models():
     kmeans = joblib.load(MODEL_DIR / 'kmeans_model.pkl')
@@ -91,8 +101,9 @@ def get_business_recommendation(cluster_id):
 # Giao diện Tabs
 st.title("Nền tảng Quản lý Khách Hàng")
 
-tab_bi, tab3, tab4 = st.tabs([
+tab_bi, tab_cube, tab3, tab4 = st.tabs([
     "Business Intelligence (BI)", 
+    "OLAP & Iceberg Cube",
     "Mô Hình Clustering", 
     "Ứng Dụng Khuyến Nghị"
 ])
@@ -231,6 +242,48 @@ with tab_bi:
             
     else:
         st.error("Không tìm thấy dữ liệu. Hệ thống yêu cầu file Dữ liệu đã làm sạch.")
+
+# == MENU 2: OLAP CUBE ==
+with tab_cube:
+    st.title("2. Phân Tích OLAP & Iceberg Cubing")
+    st.markdown("Truy vấn trực tiếp lên Data Warehouse (DuckDB) để xây dựng các khối dữ liệu Iceberg Cube đa chiều xử lý những bài toán kinh doanh lớn. (Chạy hàm cấu trúc `src.utils.hcubing`)")
+    
+    col_cube1, col_cube2 = st.columns(2)
+    with col_cube1:
+        st.subheader("🧊 Sales Growth Iceberg Cube")
+        st.markdown("**Dimensions:** year, payment_type, customer_state, product_category_name")
+        st.markdown("**Measures:** total_revenue, qty_items")
+        
+        min_sup_sales = st.slider("Ngưỡng Min Support (Doanh thu)", min_value=0.1, max_value=0.9, value=0.1, step=0.1, key='sup_sales')
+        top_k_sales = st.number_input("Top K giao dịch cao nhất", min_value=0, value=0, step=1, key='k_sales')
+        
+        if st.button("Xây dựng Sales Cube"):
+            with st.spinner("Đang tính toán Iceberg Cube..."):
+                k_val = top_k_sales if top_k_sales > 0 else None
+                try:
+                    df_sales_cube = build_iceberg_sales_growth_cube(min_sup_sales, k_val, str(DB_PATH))
+                    st.success(f"Cube đã tạo: {df_sales_cube.shape[0]} luật thoả mãn min_sup.")
+                    st.dataframe(df_sales_cube.style.background_gradient(subset=['total_revenue'], cmap='Greens'))
+                except Exception as e:
+                    st.error(f"Lỗi truy vấn: {e}")
+
+    with col_cube2:
+        st.subheader("🧊 Logistics Risk Iceberg Cube")
+        st.markdown("**Dimensions:** year, seller_state, customer_state, product_category_name")
+        st.markdown("**Measures:** late_orders, total_freight")
+        
+        min_sup_log = st.slider("Ngưỡng Min Support (Tổng trễ)", min_value=0.1, max_value=0.9, value=0.1, step=0.1, key='sup_log')
+        top_k_log = st.number_input("Top K phí ship cao nhất", min_value=0, value=0, step=1, key='k_log')
+
+        if st.button("Xây dựng Logistics Cube"):
+            with st.spinner("Đang tính toán Iceberg Cube..."):
+                k_val = top_k_log if top_k_log > 0 else None
+                try:
+                    df_log_cube = build_iceberg_logistics_risk_cube(min_sup_log, k_val, str(DB_PATH))
+                    st.success(f"Cube đã tạo: {df_log_cube.shape[0]} luật thoả mãn min_sup.")
+                    st.dataframe(df_log_cube.style.background_gradient(subset=['late_orders'], cmap='Reds'))
+                except Exception as e:
+                    st.error(f"Lỗi truy vấn: {e}")
 
 # == MENU 3: MACHINE LEARNING ==
 with tab3:
