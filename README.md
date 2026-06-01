@@ -29,10 +29,18 @@ python src/utils/hcubing.py --db data_warehouse.duckdb --min_sup_sales 0.2 --k_s
 
 # ELT
 
-## Data source
+## Flow:
 
-![ERD](/assets/erd.png)
+![etl](/assets/etl.png)
 
-## ETL
+## Data source:
 
-![ETL](/assets/etl.png)
+![erd](/assets/erd.png)
+
+## Star schema:
+
+![star](/assets/star.png)
+
+## Iceberg cube:
+
+![iceberg](/assets/iceberg.png)
