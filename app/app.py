@@ -12,8 +12,23 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 
-plt.style.use("dark_background")
+plt.style.use("default")
 
+# ── Auto-create .streamlit/config.toml to force light theme ──────────────────
+# glide-data-grid (st.dataframe canvas) reads theme from Streamlit's theme config,
+# not from CSS — so we must set it at the config level.
+_config_dir = Path(__file__).resolve().parent / ".streamlit"
+_config_file = _config_dir / "config.toml"
+_config_dir.mkdir(exist_ok=True)
+_config_file.write_text(
+    "[theme]\n"
+    'base = "light"\n'
+    'backgroundColor = "#f5f3ff"\n'
+    'secondaryBackgroundColor = "#ede9fe"\n'
+    'textColor = "#1e1b4b"\n'
+    'primaryColor = "#7c3aed"\n'
+)
+# ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
     page_title="Olist Data Command Center",
@@ -74,19 +89,29 @@ def _inject_styles() -> None:
         <style>
             .stApp {
                 background:
-                    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
-                    radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 26%),
-                    linear-gradient(180deg, #060816 0%, #0a1020 52%, #05070f 100%);
-                color: #e5eefc;
+                    radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 28%),
+                    radial-gradient(circle at top right, rgba(167, 139, 250, 0.10), transparent 26%),
+                    linear-gradient(180deg, #f5f3ff 0%, #ede9fe 52%, #f3f0ff 100%);
+                color: #1e1b4b;
+            }
+            /* ── Header / toolbar ── */
+            header[data-testid="stHeader"],
+            div[data-testid="stToolbar"],
+            header { background-color: #ede9fe !important; }
+
+            /* ── Sidebar background ── */
+            [data-testid="stSidebar"] {
+                background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%) !important;
+                border-right: 1px solid rgba(139, 92, 246, 0.18) !important;
             }
             .hero-card {
                 padding: 1.5rem 1.6rem;
                 border-radius: 24px;
-                background: linear-gradient(135deg, #0b1220 0%, #12264a 48%, #064e3b 100%);
+                background: #7c3aed;
                 color: white;
-                box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+                box-shadow: 0 18px 48px rgba(109, 40, 217, 0.28);
                 margin-bottom: 1rem;
-                border: 1px solid rgba(148, 163, 184, 0.16);
+                border: 1px solid rgba(167, 139, 250, 0.30);
             }
             .hero-eyebrow {
                 text-transform: uppercase;
@@ -107,47 +132,316 @@ def _inject_styles() -> None:
                 max-width: 70rem;
             }
             .section-shell {
-                background: rgba(9, 14, 28, 0.88);
-                border: 1px solid rgba(148, 163, 184, 0.16);
+                background: rgba(255, 255, 255, 0.80);
+                border: 1px solid rgba(139, 92, 246, 0.22);
                 border-radius: 20px;
                 padding: 1rem 1.1rem;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-                color: #e5eefc;
+                box-shadow: 0 10px 30px rgba(109, 40, 217, 0.10);
+                color: #1e1b4b;
             }
             div[data-testid="stMetric"] {
-                background: rgba(9, 14, 28, 0.95);
+                background: rgba(255, 255, 255, 0.95);
                 border-radius: 16px;
-                border: 1px solid rgba(148, 163, 184, 0.16);
+                border: 1px solid rgba(139, 92, 246, 0.22);
                 padding: 0.8rem 0.9rem;
-                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+                box-shadow: 0 6px 18px rgba(109, 40, 217, 0.10);
             }
-            .stTabs [data-baseweb="tab-list"] {
-                gap: 0.4rem;
-            }
+            .stTabs [data-baseweb="tab-list"] { gap: 0.4rem; }
             .stTabs [data-baseweb="tab"] {
                 border-radius: 999px;
                 padding: 0.55rem 1rem;
             }
             .stTabs [aria-selected="true"] {
-                background: linear-gradient(135deg, rgba(37, 99, 235, 0.28), rgba(16, 185, 129, 0.22));
+                background: linear-gradient(135deg, rgba(109, 40, 217, 0.18), rgba(139, 92, 246, 0.15));
             }
             div[data-testid="stDataFrame"] {
-                background: rgba(8, 12, 24, 0.96);
-                border: 1px solid rgba(148, 163, 184, 0.14);
+                border: 1px solid rgba(139, 92, 246, 0.16);
                 border-radius: 14px;
             }
-            div[data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #070b16 0%, #090f1d 100%);
-                border-right: 1px solid rgba(148, 163, 184, 0.14);
+            .stMarkdown, .stCaption, p, label, span { color: #1e1b4b; }
+
+            /* ── Multiselect tags ── */
+            span[data-baseweb="tag"] {
+                background-color: #7c3aed !important;
+                border: 1px solid #6d28d9 !important;
+                color: #ffffff !important;
+                border-radius: 6px !important;
             }
-            .stMarkdown, .stCaption, p, label, span {
-                color: #e5eefc;
+            span[data-baseweb="tag"] span,
+            span[data-baseweb="tag"] > span { color: #ffffff !important; background: transparent !important; }
+            span[data-baseweb="tag"] svg path { fill: #ffffff !important; }
+
+            /* ── Multiselect / select container ── */
+            div[data-baseweb="select"] > div,
+            div[data-baseweb="select"] {
+                background-color: #f5f3ff !important;
+                border-color: rgba(139, 92, 246, 0.40) !important;
+            }
+            div[data-baseweb="select"] input { color: #1e1b4b !important; }
+
+            /* ── Dropdown list ── */
+            ul[data-baseweb="menu"], div[data-baseweb="popover"] {
+                background-color: #f5f3ff !important;
+                border: 1px solid rgba(139, 92, 246, 0.30) !important;
+            }
+            li[role="option"] { background-color: #f5f3ff !important; color: #1e1b4b !important; }
+            li[role="option"]:hover { background-color: #ede9fe !important; }
+
+            /* ── DataFrame internals ── */
+            .dvn-underlay canvas { background: #ede9fe !important; }
+
+            /* ── Force light color-scheme cho glide-data-grid ── */
+            div[data-testid="stDataFrame"],
+            div[data-testid="stDataFrame"] * {
+                color-scheme: light !important;
+            }
+
+            /* FIX 2: DataFrame toolbar buttons - override dark theme */
+            [data-testid="stElementToolbar"],
+            [data-testid="stDataFrameToolbar"] {
+                background-color: #7c3aed !important;
+                border-color: #6d28d9 !important;
+                border-radius: 8px !important;
+            }
+            [data-testid="stElementToolbar"] button,
+            [data-testid="stDataFrameToolbar"] button,
+            [data-testid="stElementToolbarButton"] {
+                background-color: #7c3aed !important;
+                border-color: #6d28d9 !important;
+                color: #ffffff !important;
+            }
+            [data-testid="stElementToolbar"] button svg,
+            [data-testid="stDataFrameToolbar"] button svg,
+            [data-testid="stElementToolbarButton"] svg {
+                fill: #ffffff !important;
+                color: #ffffff !important;
+            }
+            /* ── Slider ── */
+            div[data-testid="stSlider"] div[role="slider"] {
+                background-color: #7c3aed !important;
+                border-color: #6d28d9 !important;
+            }
+            div[data-testid="stSlider"] > div > div > div {
+                background: linear-gradient(90deg, #7c3aed, #a78bfa) !important;
+            }
+
+            /* ── Expander ── */
+            /* FIX 1: Expander header - force light background + dark text always visible */
+            details {
+                background: rgba(255, 255, 255, 0.85) !important;
+                border: 1px solid rgba(139, 92, 246, 0.20) !important;
+                border-radius: 12px !important;
+            }
+            details > summary {
+                background: rgba(245, 243, 255, 0.95) !important;
+                color: #1e1b4b !important;
+                border-radius: 12px !important;
+            }
+            details > summary:hover {
+                background: rgba(237, 233, 254, 0.95) !important;
+                color: #1e1b4b !important;
+            }
+            details > summary * {
+                color: #1e1b4b !important;
+            }
+            details[open] > summary {
+                border-radius: 12px 12px 0 0 !important;
+            }
+
+            /* ── Alerts ── */
+            div[data-testid="stAlert"] {
+                background: rgba(245, 243, 255, 0.95) !important;
+                border-left-color: #7c3aed !important;
+                color: #1e1b4b !important;
+            }
+
+            /* ── Inputs ── */
+            div[data-testid="stNumberInput"] input,
+            div[data-testid="stTextInput"] input {
+                background-color: #f5f3ff !important;
+                border-color: rgba(139, 92, 246, 0.40) !important;
+                color: #1e1b4b !important;
+            }
+            div[data-testid="stSelectbox"] > div > div {
+                background-color: #f5f3ff !important;
+                border-color: rgba(139, 92, 246, 0.40) !important;
+                color: #1e1b4b !important;
+            }
+
+            /* ── Form ── */
+            div[data-testid="stForm"] {
+                background: rgba(245, 243, 255, 0.70) !important;
+                border: 1px solid rgba(139, 92, 246, 0.20) !important;
+                border-radius: 14px !important;
+                padding: 0.8rem !important;
+            }
+            button[kind="primaryFormSubmit"],
+            button[kind="secondaryFormSubmit"],
+            button[data-testid="stBaseButton-secondaryFormSubmit"],
+            button[data-testid="stBaseButton-primaryFormSubmit"],
+            button[data-testid="stFormSubmitButton"],
+            div[data-testid="stForm"] button {
+                background-color: #7c3aed !important;
+                border-color: #6d28d9 !important;
+                color: #ffffff !important;
+            }
+            div[data-testid="stForm"] button span,
+            div[data-testid="stForm"] button p {
+                color: #ffffff !important;
+            }
+            label[data-testid="stCheckbox"] span { color: #1e1b4b !important; }
+            div[data-testid="stTabContent"] { background: transparent !important; }
+
+            /* ── Fullscreen button - bỏ viền tím ── */
+            button[data-testid="StyledFullScreenButton"],
+            [data-testid="stFullScreenFrame"] button,
+            button[title="View fullscreen"],
+            button[aria-label="Fullscreen"],
+            div[data-testid="stElementToolbar"] button:last-child {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            button[data-testid="StyledFullScreenButton"]:focus,
+            button[data-testid="StyledFullScreenButton"]:focus-visible,
+            [data-testid="stFullScreenFrame"] button:focus,
+            [data-testid="stFullScreenFrame"] button:focus-visible,
+            button[title="View fullscreen"]:focus,
+            button[title="View fullscreen"]:focus-visible {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            /* Reset tất cả focus ring tím trên mọi button không phải form submit */
+            button:not([kind="primaryFormSubmit"]):not([kind="secondaryFormSubmit"]):focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
             }
         </style>
         """,
         unsafe_allow_html=True,
     )
+    # JS: force sidebar background + fix dark DataFrame toolbar/canvas on every React re-render
+    st.components.v1.html(
+        """
+        <script>
+        (function patchUI() {
+            const PURPLE_LIGHT  = '#f5f3ff';
+            const PURPLE_MID    = '#ede9fe';
+            const TEXT_DARK     = '#1e1b4b';
+            const BTN_BG        = '#7c3aed';
+            const BTN_BG_HOVER  = '#6d28d9';
+            const WHITE         = '#ffffff';
 
+            function isDark(el) {
+                const bg = window.parent.getComputedStyle(el).backgroundColor;
+                const m  = bg.match(/rgb[(](\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+                return m && (+m[1] + +m[2] + +m[3]) < 200;
+            }
+
+            function applyColors() {
+                const doc = window.parent.document;
+
+                // ── 1. Sidebar background ──────────────────────────────────────
+                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) {
+                    sidebar.style.setProperty('background',
+                        'linear-gradient(180deg,' + PURPLE_LIGHT + ' 0%,' + PURPLE_MID + ' 100%)', 'important');
+                }
+                doc.querySelectorAll('[data-testid="stSidebar"] div,[data-testid="stSidebar"] section')
+                    .forEach(el => {
+                        if (isDark(el)) {
+                            el.style.setProperty('background', 'transparent', 'important');
+                            el.style.setProperty('background-color', 'transparent', 'important');
+                        }
+                    });
+                doc.querySelectorAll('[data-testid="stSidebar"] [data-baseweb="select"] > div')
+                    .forEach(el => {
+                        el.style.setProperty('background', PURPLE_LIGHT, 'important');
+                        el.style.setProperty('background-color', PURPLE_LIGHT, 'important');
+                        el.style.setProperty('overflow', 'visible', 'important');
+                    });
+
+                // ── 2. DataFrame toolbar buttons (dark bg → purple) ────────────
+                // The floating toolbar that appears on hover over a dataframe
+                doc.querySelectorAll(
+                    '[data-testid="stDataFrame"] button, ' +
+                    '[data-testid="stDataFrameToolbar"] button, ' +
+                    '[data-testid="stElementToolbar"] button, ' +
+                    '[data-testid="stElementToolbarButton"]'
+                ).forEach(btn => {
+                    if (isDark(btn) || isDark(btn.closest('[class]') || btn)) {
+                        btn.style.setProperty('background-color', BTN_BG, 'important');
+                        btn.style.setProperty('border-color', BTN_BG_HOVER, 'important');
+                        btn.style.setProperty('color', WHITE, 'important');
+                    }
+                });
+
+                // ── 3. Any remaining dark container near DataFrames ────────────
+                doc.querySelectorAll(
+                    '[data-testid="stElementToolbar"], ' +
+                    '[data-testid="stDataFrameToolbar"]'
+                ).forEach(el => {
+                    if (isDark(el)) {
+                        el.style.setProperty('background-color', BTN_BG, 'important');
+                        el.style.setProperty('border-color', BTN_BG_HOVER, 'important');
+                    }
+                });
+
+                // ── 4. Download button inside expander (không target nút Fullscreen) ──
+                doc.querySelectorAll(
+                    'details button[data-testid="stBaseButton-secondary"], ' +
+                    '[data-testid="stForm"] button[data-testid="stBaseButton-secondary"]'
+                ).forEach(btn => {
+                    if (isDark(btn)) {
+                        btn.style.setProperty('background-color', BTN_BG, 'important');
+                        btn.style.setProperty('border-color', BTN_BG_HOVER, 'important');
+                        btn.style.setProperty('color', WHITE, 'important');
+                    }
+                });
+
+                // ── 5. Force light color-scheme + xóa outline fullscreen button ──
+                doc.querySelectorAll('[data-testid="stDataFrame"] iframe').forEach(iframe => {
+                    iframe.style.setProperty('color-scheme', 'light', 'important');
+                    try {
+                        if (iframe.contentDocument && iframe.contentDocument.documentElement) {
+                            iframe.contentDocument.documentElement.style.setProperty('color-scheme', 'light', 'important');
+                        }
+                    } catch(e) {}
+                });
+                // ── 6. Force white text on all form submit buttons (Xây dựng cube, Dự đoán cụm) ──
+                doc.querySelectorAll(
+                    'div[data-testid="stForm"] button, ' +
+                    'button[data-testid="stBaseButton-secondaryFormSubmit"], ' +
+                    'button[data-testid="stBaseButton-primaryFormSubmit"]'
+                ).forEach(btn => {
+                    btn.style.setProperty('background-color', BTN_BG, 'important');
+                    btn.style.setProperty('border-color', BTN_BG_HOVER, 'important');
+                    btn.style.setProperty('color', WHITE, 'important');
+                    btn.querySelectorAll('span, p').forEach(el => {
+                        el.style.setProperty('color', WHITE, 'important');
+                    });
+                });
+                doc.querySelectorAll(
+                    'button[title="View fullscreen"], ' +
+                    'button[aria-label="Fullscreen"], ' +
+                    '[data-testid="stFullScreenFrame"] button, ' +
+                    'button[data-testid="StyledFullScreenButton"]'
+                ).forEach(btn => {
+                    btn.style.setProperty('outline', 'none', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                    btn.style.setProperty('border', 'none', 'important');
+                });
+            }
+
+            applyColors();
+            const observer = new MutationObserver(applyColors);
+            observer.observe(window.parent.document.body, { childList: true, subtree: true });
+        })();
+        </script>
+        """,
+        height=0,
+    )
 
 def _format_bytes(size_bytes: float) -> str:
     if size_bytes <= 0:
@@ -358,7 +652,7 @@ def _persona_card(cluster_id: int, persona: dict[str, Any]) -> None:
     st.markdown(
         f"""
         <div class="section-shell">
-            <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Cụm {cluster_id}</div>
+            <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.12em; color:#7c3aed;">Cụm {cluster_id}</div>
             <h3 style="margin-top:0.2rem;">{persona['name']}</h3>
             <p style="margin-bottom:0.5rem;">{persona['desc']}</p>
         </div>
@@ -420,11 +714,11 @@ def _build_persona_map(cluster_profile: pd.DataFrame) -> dict[int, dict[str, Any
 
 def _render_kpis(frame: pd.DataFrame) -> None:
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Khách hàng", f"{len(frame):,}")
-    col2.metric("Monetary TB", f"{_safe_stat(frame, 'monetary', 'mean'):,.2f}")
-    col3.metric("Recency TB", f"{_safe_stat(frame, 'recency', 'mean'):,.0f} ngày")
-    col4.metric("Frequency TB", f"{_safe_stat(frame, 'frequency', 'mean'):,.2f}")
-    col5.metric("Shipping delay TB", f"{_safe_stat(frame, 'avg_shipping_delay', 'mean'):,.1f} ngày")
+    col1.metric("Customer", f"{len(frame):,}")
+    col2.metric("Average Monetary", f"{_safe_stat(frame, 'monetary', 'mean'):,.2f}")
+    col3.metric("Average Recency", f"{_safe_stat(frame, 'recency', 'mean'):,.0f} ngày")
+    col4.metric("Average Frequency", f"{_safe_stat(frame, 'frequency', 'mean'):,.2f}")
+    col5.metric("Average Shipping Delay", f"{_safe_stat(frame, 'avg_shipping_delay', 'mean'):,.1f} ngày")
 
 
 def _render_overview(frame: pd.DataFrame) -> None:
@@ -443,7 +737,9 @@ def _render_overview(frame: pd.DataFrame) -> None:
         st.markdown("#### Phân bố theo bang")
         state_counts = frame["customer_state"].value_counts().head(12).sort_values()
         fig, ax = plt.subplots(figsize=(7.8, 4.8))
-        sns.barplot(x=state_counts.values, y=state_counts.index, palette="crest", ax=ax)
+        fig.patch.set_visible(False)
+        ax.set_facecolor("none")
+        sns.barplot(x=state_counts.values, y=state_counts.index, color="#7c3aed", ax=ax)
         ax.set_xlabel("Số khách hàng")
         ax.set_ylabel("Bang")
         ax.set_title("Top bang theo số lượng khách hàng")
@@ -451,8 +747,52 @@ def _render_overview(frame: pd.DataFrame) -> None:
     with c2:
         st.markdown("#### Phân bố thanh toán")
         payment_counts = frame["dominant_payment_type"].value_counts()
-        pie_fig, pie_ax = plt.subplots(figsize=(6.2, 4.8))
-        payment_counts.plot(kind="pie", autopct="%.1f%%", startangle=90, ax=pie_ax, legend=False)
+        pie_fig, pie_ax = plt.subplots(figsize=(7.8, 4.8))
+        pie_fig.patch.set_visible(False)
+        pie_ax.set_facecolor("none")
+        # Shift pie left to leave room for legend on right
+        pie_ax.set_position([0.0, 0.05, 0.55, 0.90])
+        import math as _math
+        wedges, texts, autotexts = pie_ax.pie(
+            payment_counts.values,
+            labels=None,
+            autopct=lambda pct: f"{pct:.1f}%" if pct >= 5 else "",
+            startangle=90,
+            pctdistance=0.65,
+            radius=1.0,
+        )
+        for autotext in autotexts:
+            autotext.set_fontsize(10)
+        # Add external annotations for small slices (< 5%) - short offset to avoid title overlap
+        for wedge, label, val in zip(wedges, payment_counts.index, payment_counts.values):
+            pct = 100.0 * val / payment_counts.sum()
+            if pct < 5:
+                ang = (wedge.theta1 + wedge.theta2) / 2.0
+                rad = _math.radians(ang)
+                # Short outward offset: 1.15 radius
+                x_tip = _math.cos(rad) * 1.0
+                y_tip = _math.sin(rad) * 1.0
+                x_lbl = _math.cos(rad) * 1.18
+                y_lbl = _math.sin(rad) * 1.18
+                pie_ax.annotate(
+                    f"{pct:.1f}%",
+                    xy=(x_tip, y_tip),
+                    xytext=(x_lbl, y_lbl),
+                    fontsize=8,
+                    ha="center",
+                    va="center",
+                    arrowprops=dict(arrowstyle="-", color="gray", lw=0.7),
+                )
+        pie_ax.legend(
+            wedges,
+            payment_counts.index,
+            title="Loại thanh toán",
+            loc="center left",
+            bbox_to_anchor=(1.05, 0.5),
+            ncol=1,
+            fontsize=9,
+            title_fontsize=9,
+        )
         pie_ax.set_ylabel("")
         pie_ax.set_title("Phương thức thanh toán chủ đạo")
         st.pyplot(pie_fig, clear_figure=True)
@@ -462,6 +802,8 @@ def _render_overview(frame: pd.DataFrame) -> None:
         st.markdown("#### Monetary vs Frequency")
         sample_df = frame.sample(min(4000, len(frame)), random_state=42)
         fig_scatter, ax_scatter = plt.subplots(figsize=(7.4, 4.8))
+        fig_scatter.patch.set_visible(False)
+        ax_scatter.set_facecolor("none")
         sns.scatterplot(
             data=sample_df,
             x="frequency",
@@ -477,6 +819,8 @@ def _render_overview(frame: pd.DataFrame) -> None:
     with c4:
         st.markdown("#### Recency vs Monetary")
         fig_scatter2, ax_scatter2 = plt.subplots(figsize=(7.4, 4.8))
+        fig_scatter2.patch.set_visible(False)
+        ax_scatter2.set_facecolor("none")
         sns.scatterplot(
             data=sample_df,
             x="recency",
@@ -513,27 +857,36 @@ def _render_etl_tab() -> None:
     st.caption("Tab này cho thấy nguồn raw, staging, completed và cleaned đang được dashboard tiêu thụ.")
 
     inventory = _build_inventory_frame()
-    left, right = st.columns([0.95, 1.05])
-    with left:
-        st.dataframe(inventory, use_container_width=True, hide_index=True)
-    with right:
-        st.markdown("#### Warehouse tables")
-        try:
-            table_counts = load_warehouse_table_counts()
-            st.dataframe(table_counts, use_container_width=True, hide_index=True)
-            warehouse_tables = table_counts["table"].tolist()
-            if warehouse_tables:
-                preview_table = st.selectbox(
-                    "Chọn bảng warehouse để xem mẫu",
-                    warehouse_tables,
-                    key="warehouse_preview_table",
-                )
-                st.dataframe(
-                    load_warehouse_preview(preview_table, limit=10),
-                    use_container_width=True,
-                )
-        except Exception as exc:
-            st.warning(f"Không đọc được warehouse: {exc}")
+
+    # Row 1: Warehouse tables (full width)
+    st.markdown("#### Warehouse tables")
+    try:
+        table_counts = load_warehouse_table_counts()
+        st.dataframe(table_counts, use_container_width=True, hide_index=True)
+    except Exception as exc:
+        st.warning(f"Không đọc được warehouse: {exc}")
+
+    # Row 2: ETL lineage (full width)
+    st.markdown("#### ETL lineage trạng thái dữ liệu")
+    st.dataframe(inventory, use_container_width=True, hide_index=True)
+
+    # Row 3: Chọn bảng (full width)
+    st.markdown("#### Chọn bảng")
+    try:
+        table_counts = load_warehouse_table_counts()
+        warehouse_tables = table_counts["table"].tolist()
+        if warehouse_tables:
+            preview_table = st.selectbox(
+                "Chọn bảng warehouse để xem mẫu",
+                warehouse_tables,
+                key="warehouse_preview_table",
+            )
+            st.dataframe(
+                load_warehouse_preview(preview_table, limit=10),
+                use_container_width=True,
+            )
+    except Exception as exc:
+        st.warning(f"Không đọc được warehouse: {exc}")
 
     st.markdown("#### Xem mẫu dữ liệu từ từng giai đoạn")
     stage_map = {
@@ -579,13 +932,16 @@ def _display_cube_result(frame: pd.DataFrame, measure_column: str, title: str) -
     axis_name = st.selectbox(f"Trục phân tích cho {title}", axis_candidates, key=f"axis_{title}")
     grouped = frame.groupby(axis_name, dropna=False)[measure_column].sum().sort_values(ascending=False)
 
-    chart_fig, chart_ax = plt.subplots(figsize=(7.5, 4.5))
-    grouped.head(12).sort_values().plot(kind="barh", color="#0f766e", ax=chart_ax)
+    chart_fig, chart_ax = plt.subplots(figsize=(6.0, 3.5))
+    chart_fig.patch.set_visible(False)
+    chart_ax.set_facecolor("none")
+    grouped.head(12).sort_values().plot(kind="barh", color="#7c3aed", ax=chart_ax)
     chart_ax.set_title(f"{title} - top theo {axis_name}")
     chart_ax.set_xlabel(measure_column)
+    chart_fig.tight_layout()
     st.pyplot(chart_fig, clear_figure=True)
 
-    st.dataframe(frame, use_container_width=True)
+    st.dataframe(frame, use_container_width=True, height=300)
     st.download_button(
         f"Tải {title}",
         data=frame.to_csv(index=False).encode("utf-8"),
@@ -698,9 +1054,12 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
     c3.metric("Model", model_name)
     c4.metric("PCA dims", "2")
 
-    plot_left, plot_right = st.columns([1.15, 0.85])
+    plot_left, plot_right = st.columns([1.0, 1.0])
     with plot_left:
-        fig, ax = plt.subplots(figsize=(8.2, 5.6))
+        st.markdown("#### PCA")
+        fig, ax = plt.subplots(figsize=(6.5, 5.0), constrained_layout=True)
+        fig.patch.set_visible(False)
+        ax.set_facecolor("none")
         scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], c=cluster_ids, cmap="tab10", s=18, alpha=0.65)
         ax.set_title("PCA projection theo cụm")
         ax.set_xlabel("PC1")
@@ -710,7 +1069,9 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
     with plot_right:
         st.markdown("#### Kích thước cụm")
         cluster_sizes = pd.Series(cluster_ids).value_counts().sort_index()
-        size_fig, size_ax = plt.subplots(figsize=(5.5, 5.2))
+        size_fig, size_ax = plt.subplots(figsize=(6.5, 5.0), constrained_layout=True)
+        size_fig.patch.set_visible(False)
+        size_ax.set_facecolor("none")
         sns.barplot(x=cluster_sizes.index.astype(str), y=cluster_sizes.values, palette="tab10", ax=size_ax)
         size_ax.set_xlabel("Cluster")
         size_ax.set_ylabel("Số khách hàng")
