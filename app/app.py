@@ -1206,10 +1206,8 @@ def main() -> None:
         """
         <div class="hero-card">
             <div class="hero-eyebrow">Olist Data Platform</div>
-            <div class="hero-title">Dashboard tương tác cho ETL, Iceberg Cube và Clustering</div>
+            <div class="hero-title">Dashboard</div>
             <div class="hero-copy">
-                Dữ liệu đi từ raw -> staging -> cleaned -> warehouse. Dashboard này dùng trực tiếp file cleaned của ETL
-                cho phân tích khách hàng, và dùng warehouse để xây Iceberg cube, xem lineage và vận hành mô hình phân cụm.
             </div>
         </div>
         """,
