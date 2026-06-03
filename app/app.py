@@ -33,7 +33,6 @@ _config_file.write_text(
 st.set_page_config(
     page_title="Olist Data Command Center",
     layout="wide",
-    page_icon="📊",
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -443,6 +442,7 @@ def _inject_styles() -> None:
         height=0,
     )
 
+
 def _format_bytes(size_bytes: float) -> str:
     if size_bytes <= 0:
         return "0 KB"
@@ -456,7 +456,11 @@ def _list_files(directory: Path, suffixes: tuple[str, ...]) -> list[Path]:
     if not directory.exists():
         return []
     return sorted(
-        [path for path in directory.iterdir() if path.is_file() and path.suffix.lower() in suffixes],
+        [
+            path
+            for path in directory.iterdir()
+            if path.is_file() and path.suffix.lower() in suffixes
+        ],
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
@@ -490,7 +494,11 @@ def _build_inventory_frame() -> pd.DataFrame:
                 "path": str(directory.relative_to(BASE_DIR)),
                 "files": summary["count"],
                 "size": _format_bytes(summary["total_size"]),
-                "latest": pd.to_datetime(summary["latest"], unit="s") if summary["latest"] else pd.NaT,
+                "latest": (
+                    pd.to_datetime(summary["latest"], unit="s")
+                    if summary["latest"]
+                    else pd.NaT
+                ),
             }
         )
     return pd.DataFrame(rows)
@@ -499,7 +507,9 @@ def _build_inventory_frame() -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def load_customer_dataset() -> pd.DataFrame:
     if not CUSTOMER_FILE.exists():
-        raise FileNotFoundError(f"Không tìm thấy file cleaned khách hàng: {CUSTOMER_FILE}")
+        raise FileNotFoundError(
+            f"Không tìm thấy file cleaned khách hàng: {CUSTOMER_FILE}"
+        )
     return pd.read_csv(CUSTOMER_FILE)
 
 
@@ -563,8 +573,12 @@ def _apply_customer_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str
     with st.sidebar:
         st.markdown("### Bộ lọc phân tích")
         state_options = sorted(filtered["customer_state"].dropna().unique().tolist())
-        payment_options = sorted(filtered["dominant_payment_type"].dropna().unique().tolist())
-        category_options = sorted(filtered["favorite_category"].dropna().unique().tolist())
+        payment_options = sorted(
+            filtered["dominant_payment_type"].dropna().unique().tolist()
+        )
+        category_options = sorted(
+            filtered["favorite_category"].dropna().unique().tolist()
+        )
 
         selected_states = st.multiselect(
             "Bang / State",
@@ -583,9 +597,15 @@ def _apply_customer_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str
             default=default_categories,
         )
 
-        frequency_min, frequency_max = int(filtered["frequency"].min()), int(filtered["frequency"].max())
-        recency_min, recency_max = int(filtered["recency"].min()), int(filtered["recency"].max())
-        monetary_min, monetary_max = float(filtered["monetary"].min()), float(filtered["monetary"].max())
+        frequency_min, frequency_max = int(filtered["frequency"].min()), int(
+            filtered["frequency"].max()
+        )
+        recency_min, recency_max = int(filtered["recency"].min()), int(
+            filtered["recency"].max()
+        )
+        monetary_min, monetary_max = float(filtered["monetary"].min()), float(
+            filtered["monetary"].max()
+        )
 
         frequency_range = st.slider(
             "Frequency",
@@ -672,12 +692,20 @@ def _build_persona_map(cluster_profile: pd.DataFrame) -> dict[int, dict[str, Any
         else:
             normalized[f"{column}_z"] = (series - series.mean()) / series.std(ddof=0)
 
-    normalized["vip_score"] = normalized["monetary_z"] + normalized["frequency_z"] - normalized["recency_z"]
-    normalized["risk_score"] = normalized["recency_z"] - normalized["monetary_z"] - normalized["frequency_z"]
+    normalized["vip_score"] = (
+        normalized["monetary_z"] + normalized["frequency_z"] - normalized["recency_z"]
+    )
+    normalized["risk_score"] = (
+        normalized["recency_z"] - normalized["monetary_z"] - normalized["frequency_z"]
+    )
 
     vip_cluster = int(normalized["vip_score"].idxmax())
     risk_cluster = int(normalized["risk_score"].idxmax())
-    remaining = [int(idx) for idx in normalized.index.tolist() if idx not in {vip_cluster, risk_cluster}]
+    remaining = [
+        int(idx)
+        for idx in normalized.index.tolist()
+        if idx not in {vip_cluster, risk_cluster}
+    ]
     core_cluster = remaining[0] if remaining else vip_cluster
 
     personas = {
@@ -718,18 +746,23 @@ def _render_kpis(frame: pd.DataFrame) -> None:
     col2.metric("Average Monetary", f"{_safe_stat(frame, 'monetary', 'mean'):,.2f}")
     col3.metric("Average Recency", f"{_safe_stat(frame, 'recency', 'mean'):,.0f} ngày")
     col4.metric("Average Frequency", f"{_safe_stat(frame, 'frequency', 'mean'):,.2f}")
-    col5.metric("Average Shipping Delay", f"{_safe_stat(frame, 'avg_shipping_delay', 'mean'):,.1f} ngày")
+    col5.metric(
+        "Average Shipping Delay",
+        f"{_safe_stat(frame, 'avg_shipping_delay', 'mean'):,.1f} ngày",
+    )
 
 
 def _render_overview(frame: pd.DataFrame) -> None:
     st.markdown('<div class="section-shell">', unsafe_allow_html=True)
     st.subheader("Tổng quan dữ liệu khách hàng")
-    st.caption("Nguồn chính: file cleaned của ETL. Các bộ lọc ở sidebar đang điều chỉnh toàn bộ dashboard.")
+    st.caption(
+        "Nguồn chính: file cleaned của ETL. Các bộ lọc ở sidebar đang điều chỉnh toàn bộ dashboard."
+    )
     _render_kpis(frame)
 
     if frame.empty:
         st.warning("Không còn bản ghi nào sau khi áp bộ lọc.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         return
 
     c1, c2 = st.columns([1.1, 0.9])
@@ -753,6 +786,7 @@ def _render_overview(frame: pd.DataFrame) -> None:
         # Shift pie left to leave room for legend on right
         pie_ax.set_position([0.0, 0.05, 0.55, 0.90])
         import math as _math
+
         wedges, texts, autotexts = pie_ax.pie(
             payment_counts.values,
             labels=None,
@@ -764,7 +798,9 @@ def _render_overview(frame: pd.DataFrame) -> None:
         for autotext in autotexts:
             autotext.set_fontsize(10)
         # Add external annotations for small slices (< 5%) - short offset to avoid title overlap
-        for wedge, label, val in zip(wedges, payment_counts.index, payment_counts.values):
+        for wedge, label, val in zip(
+            wedges, payment_counts.index, payment_counts.values
+        ):
             pct = 100.0 * val / payment_counts.sum()
             if pct < 5:
                 ang = (wedge.theta1 + wedge.theta2) / 2.0
@@ -836,7 +872,10 @@ def _render_overview(frame: pd.DataFrame) -> None:
 
     with st.expander("Xem mô tả thống kê và dữ liệu lọc", expanded=False):
         st.dataframe(
-            frame[NUMERICAL_FEATURES + ["customer_state", "favorite_category", "dominant_payment_type"]]
+            frame[
+                NUMERICAL_FEATURES
+                + ["customer_state", "favorite_category", "dominant_payment_type"]
+            ]
             .describe(include="all")
             .T,
             use_container_width=True,
@@ -854,7 +893,9 @@ def _render_overview(frame: pd.DataFrame) -> None:
 def _render_etl_tab() -> None:
     st.markdown('<div class="section-shell">', unsafe_allow_html=True)
     st.subheader("ETL lineage và trạng thái dữ liệu")
-    st.caption("Tab này cho thấy nguồn raw, staging, completed và cleaned đang được dashboard tiêu thụ.")
+    st.caption(
+        "Tab này cho thấy nguồn raw, staging, completed và cleaned đang được dashboard tiêu thụ."
+    )
 
     inventory = _build_inventory_frame()
 
@@ -867,7 +908,7 @@ def _render_etl_tab() -> None:
         st.warning(f"Không đọc được warehouse: {exc}")
 
     # Row 2: ETL lineage (full width)
-    st.markdown("#### ETL lineage trạng thái dữ liệu")
+    st.markdown("#### Trạng thái dữ liệu")
     st.dataframe(inventory, use_container_width=True, hide_index=True)
 
     # Row 3: Chọn bảng (full width)
@@ -897,7 +938,9 @@ def _render_etl_tab() -> None:
     }
     stage_name = st.selectbox("Chọn giai đoạn", list(stage_map.keys()))
     directory = stage_map[stage_name]
-    suffixes = (".csv", ".parquet") if stage_name in {"Raw", "Cleaned"} else (".parquet",)
+    suffixes = (
+        (".csv", ".parquet") if stage_name in {"Raw", "Cleaned"} else (".parquet",)
+    )
     files = _list_files(directory, suffixes)
     if not files:
         st.info("Không có file nào trong thư mục này.")
@@ -929,8 +972,14 @@ def _display_cube_result(frame: pd.DataFrame, measure_column: str, title: str) -
     ]
     if not axis_candidates:
         axis_candidates = [frame.columns[0]]
-    axis_name = st.selectbox(f"Trục phân tích cho {title}", axis_candidates, key=f"axis_{title}")
-    grouped = frame.groupby(axis_name, dropna=False)[measure_column].sum().sort_values(ascending=False)
+    axis_name = st.selectbox(
+        f"Trục phân tích cho {title}", axis_candidates, key=f"axis_{title}"
+    )
+    grouped = (
+        frame.groupby(axis_name, dropna=False)[measure_column]
+        .sum()
+        .sort_values(ascending=False)
+    )
 
     chart_fig, chart_ax = plt.subplots(figsize=(6.0, 3.5))
     chart_fig.patch.set_visible(False)
@@ -953,7 +1002,9 @@ def _display_cube_result(frame: pd.DataFrame, measure_column: str, title: str) -
 def _render_cube_tab() -> None:
     st.markdown('<div class="section-shell">', unsafe_allow_html=True)
     st.subheader("OLAP & Iceberg cube")
-    st.caption("Tạo cube trực tiếp từ warehouse. Mỗi cube có thể tái tạo lại theo ngưỡng min support và top-k.")
+    st.caption(
+        "Tạo cube trực tiếp từ warehouse. Mỗi cube có thể tái tạo lại theo ngưỡng min support và top-k."
+    )
 
     sales_col, logistics_col = st.columns(2)
     if "sales_cube" not in st.session_state:
@@ -964,8 +1015,12 @@ def _render_cube_tab() -> None:
     with sales_col:
         st.markdown("#### Sales Growth Iceberg Cube")
         with st.form("sales_cube_form"):
-            min_sup_sales = st.slider("Min support doanh thu", 0.1, 0.9, 0.2, 0.1, key="sales_min_sup")
-            top_k_sales = st.number_input("Top-k giao dịch", min_value=0, value=0, step=1, key="sales_top_k")
+            min_sup_sales = st.slider(
+                "Min support doanh thu", 0.1, 0.9, 0.2, 0.1, key="sales_min_sup"
+            )
+            top_k_sales = st.number_input(
+                "Top-k giao dịch", min_value=0, value=0, step=1, key="sales_top_k"
+            )
             build_sales = st.form_submit_button("Xây dựng Sales Cube")
         if build_sales:
             with st.spinner("Đang xây dựng sales cube..."):
@@ -987,8 +1042,12 @@ def _render_cube_tab() -> None:
     with logistics_col:
         st.markdown("#### Logistics Risk Iceberg Cube")
         with st.form("logistics_cube_form"):
-            min_sup_logistics = st.slider("Min support trễ giao hàng", 0.1, 0.9, 0.2, 0.1, key="log_min_sup")
-            top_k_logistics = st.number_input("Top-k phí ship", min_value=0, value=0, step=1, key="log_top_k")
+            min_sup_logistics = st.slider(
+                "Min support trễ giao hàng", 0.1, 0.9, 0.2, 0.1, key="log_min_sup"
+            )
+            top_k_logistics = st.number_input(
+                "Top-k phí ship", min_value=0, value=0, step=1, key="log_top_k"
+            )
             build_logistics = st.form_submit_button("Xây dựng Logistics Cube")
         if build_logistics:
             with st.spinner("Đang xây dựng logistics cube..."):
@@ -1012,7 +1071,9 @@ def _render_cube_tab() -> None:
 def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
     st.markdown('<div class="section-shell">', unsafe_allow_html=True)
     st.subheader("Mô hình phân cụm")
-    st.caption("Chọn model, xem profile cụm, rồi suy luận một khách hàng mẫu ngay trên dashboard.")
+    st.caption(
+        "Chọn model, xem profile cụm, rồi suy luận một khách hàng mẫu ngay trên dashboard."
+    )
 
     if frame.empty:
         st.warning("Không có dữ liệu sau khi lọc để chạy clustering.")
@@ -1036,7 +1097,11 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
         value=min(3000, len(frame)),
         step=100,
     )
-    working_frame = frame.sample(min(sample_size, len(frame)), random_state=42).copy() if len(frame) > sample_size else frame.copy()
+    working_frame = (
+        frame.sample(min(sample_size, len(frame)), random_state=42).copy()
+        if len(frame) > sample_size
+        else frame.copy()
+    )
 
     X = working_frame[NUMERICAL_FEATURES].fillna(0)
     X_scaled = scaler.transform(X)
@@ -1045,7 +1110,9 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
 
     cluster_frame = working_frame.copy()
     cluster_frame["cluster"] = cluster_ids
-    cluster_profile = cluster_frame.groupby("cluster")[NUMERICAL_FEATURES].mean().round(2)
+    cluster_profile = (
+        cluster_frame.groupby("cluster")[NUMERICAL_FEATURES].mean().round(2)
+    )
     personas = _build_persona_map(cluster_profile)
 
     c1, c2, c3, c4 = st.columns(4)
@@ -1060,7 +1127,9 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
         fig, ax = plt.subplots(figsize=(6.5, 5.0), constrained_layout=True)
         fig.patch.set_visible(False)
         ax.set_facecolor("none")
-        scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], c=cluster_ids, cmap="tab10", s=18, alpha=0.65)
+        scatter = ax.scatter(
+            X_pca[:, 0], X_pca[:, 1], c=cluster_ids, cmap="tab10", s=18, alpha=0.65
+        )
         ax.set_title("PCA projection theo cụm")
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
@@ -1072,7 +1141,12 @@ def _render_cluster_tab(frame: pd.DataFrame, artifacts: dict[str, Any]) -> None:
         size_fig, size_ax = plt.subplots(figsize=(6.5, 5.0), constrained_layout=True)
         size_fig.patch.set_visible(False)
         size_ax.set_facecolor("none")
-        sns.barplot(x=cluster_sizes.index.astype(str), y=cluster_sizes.values, palette="tab10", ax=size_ax)
+        sns.barplot(
+            x=cluster_sizes.index.astype(str),
+            y=cluster_sizes.values,
+            palette="tab10",
+            ax=size_ax,
+        )
         size_ax.set_xlabel("Cluster")
         size_ax.set_ylabel("Số khách hàng")
         size_ax.set_title("Phân bố kích thước cụm")
@@ -1159,7 +1233,7 @@ def main() -> None:
     )
 
     tab_overview, tab_etl, tab_cube, tab_cluster = st.tabs(
-        ["Tổng quan", "ETL & Nguồn", "OLAP / Iceberg", "Clustering & Dự đoán"]
+        ["Overview", "ETL", "Iceberg Cube", "Clustering"]
     )
 
     with tab_overview:
