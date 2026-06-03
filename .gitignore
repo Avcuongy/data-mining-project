@@ -232,4 +232,3 @@ raw/
 
 # database
 *.db
-*.duckdb
