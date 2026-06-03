@@ -225,8 +225,6 @@ test_output/
 test/
 
 # data files
-etl/
-*.parquet
 *.json
 
 # database
