@@ -226,7 +226,6 @@ test/
 
 # data files
 etl/
-raw/
 *.parquet
 *.json
 
