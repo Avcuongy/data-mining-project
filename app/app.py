@@ -526,7 +526,7 @@ def load_model_artifacts() -> dict[str, Any]:
 
 def _connect_warehouse() -> duckdb.DuckDBPyConnection:
     conn = duckdb.connect(str(DB_PATH), read_only=True)
-    conn.execute(f"SET schema = '{WAREHOUSE_SCHEMA}'")
+    conn.execute("SET search_path = 'data_warehouse.DataWarehouse,main'")
     return conn
 
 
