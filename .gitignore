@@ -224,8 +224,9 @@ test.*
 test_output/
 test/
 
-# data
-*.csv
+# data files
+etl/
+raw/
 *.parquet
 *.json
 
